@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kick Chat Translator</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <h1>🔄 Kick Chat Translator</h1>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="auth-section">
+                <h2>Kick Chat Translator - Setup</h2>
+                <p class="subtitle">Configure your translation preferences</p>
+
+                <form id="translatorForm" class="translator-form">
+                    <div class="form-group">
+                        <label for="nativeLanguage">Select your native language:</label>
+                        <p class="helper-text">(Language you <strong>DO NOT</strong> want translated)</p>
+                        <select id="nativeLanguage" name="nativeLanguage" required>
+                            <option value="">Select language</option>
+                            <option value="en">English</option>
+                            <option value="es">Spanish</option>
+                            <option value="zh">Chinese</option>
+                            <option value="fr">French</option>
+                            <option value="ar">Arabic</option>
+                            <option value="ru">Russian</option>
+                            <option value="pt">Portuguese</option>
+                            <option value="de">German</option>
+                            <option value="it">Italian</option>
+                            <option value="ja">Japanese</option>
+                            <option value="ko">Korean</option>
+                            <option value="hi">Hindi</option>
+                            <option value="bn">Bengali</option>
+                            <option value="nl">Dutch</option>
+                            <option value="tr">Turkish</option>
+                            <option value="pl">Polish</option>
+                            <option value="sv">Swedish</option>
+                            <option value="id">Indonesian</option>
+                            <option value="vi">Vietnamese</option>
+                            <option value="el">Greek</option>
+                            <option value="cs">Czech</option>
+                            <option value="hu">Hungarian</option>
+                            <option value="th">Thai</option>
+                            <option value="he">Hebrew</option>
+                            <option value="fi">Finnish</option>
+                            <option value="no">Norwegian</option>
+                            <option value="da">Danish</option>
+                            <option value="ro">Romanian</option>
+                            <option value="uk">Ukrainian</option>
+                            <option value="ms">Malay</option>
+                            <option value="tl">Filipino</option>
+                            <option value="sr">Serbian</option>
+                            <option value="hr">Croatian</option>
+                            <option value="sk">Slovak</option>
+                            <option value="bg">Bulgarian</option>
+                            <option value="lt">Lithuanian</option>
+                            <option value="lv">Latvian</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="secondLanguage">Select a 2nd language that you <strong>DO NOT</strong> want translated (optional):</label>
+                        <p class="helper-text">(Optional)</p>
+                        <select id="secondLanguage" name="secondLanguage">
+                            <option value="">Select language</option>
+                            <option value="en">English</option>
+                            <option value="es">Spanish</option>
+                            <option value="zh">Chinese</option>
+                            <option value="fr">French</option>
+                            <option value="ar">Arabic</option>
+                            <option value="ru">Russian</option>
+                            <option value="pt">Portuguese</option>
+                            <option value="de">German</option>
+                            <option value="it">Italian</option>
+                            <option value="ja">Japanese</option>
+                            <option value="ko">Korean</option>
+                            <option value="hi">Hindi</option>
+                            <option value="bn">Bengali</option>
+                            <option value="nl">Dutch</option>
+                            <option value="tr">Turkish</option>
+                            <option value="pl">Polish</option>
+                            <option value="sv">Swedish</option>
+                            <option value="id">Indonesian</option>
+                            <option value="vi">Vietnamese</option>
+                            <option value="el">Greek</option>
+                            <option value="cs">Czech</option>
+                            <option value="hu">Hungarian</option>
+                            <option value="th">Thai</option>
+                            <option value="he">Hebrew</option>
+                            <option value="fi">Finnish</option>
+                            <option value="no">Norwegian</option>
+                            <option value="da">Danish</option>
+                            <option value="ro">Romanian</option>
+                            <option value="uk">Ukrainian</option>
+                            <option value="ms">Malay</option>
+                            <option value="tl">Filipino</option>
+                            <option value="sr">Serbian</option>
+                            <option value="hr">Croatian</option>
+                            <option value="sk">Slovak</option>
+                            <option value="bg">Bulgarian</option>
+                            <option value="lt">Lithuanian</option>
+                            <option value="lv">Latvian</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="translationDelay">Delay between translations (Optional):</label>
+                        <select id="translationDelay" name="translationDelay">
+                            <option value="0">No Limit</option>
+                            <option value="5">5 seconds</option>
+                            <option value="10">10 seconds</option>
+                            <option value="30">30 seconds</option>
+                            <option value="60">1 minute</option>
+                            <option value="180">3 minutes</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Select your Plan:</label>
+                        <div class="plan-options">
+                            <div class="plan-option">
+                                <input type="radio" id="planFree" name="plan" value="free" checked>
+                                <label for="planFree" class="plan-label">
+                                    <span class="plan-name">Free</span>
+                                    <span class="plan-details">5K characters (will expire)</span>
+                                </label>
+                            </div>
+                            <div class="plan-option">
+                                <input type="radio" id="plan2" name="plan" value="basic">
+                                <label for="plan2" class="plan-label">
+                                    <span class="plan-name">$2</span>
+                                    <span class="plan-details">50K characters/month</span>
+                                </label>
+                            </div>
+                            <div class="plan-option">
+                                <input type="radio" id="plan4" name="plan" value="premium">
+                                <label for="plan4" class="plan-label">
+                                    <span class="plan-name">$4</span>
+                                    <span class="plan-details">150K characters/month</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="authorize-btn">Authorize</button>
+                </form>
+            </div>
+
+            <div class="translator-section" id="translatorSection" style="display: none;">
+                <h2>Chat Translator Active</h2>
+                <div class="status-info">
+                    <div class="status-item">
+                        <span class="label">Native Language:</span>
+                        <span id="selectedNative"></span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Second Language:</span>
+                        <span id="selectedSecond"></span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Delay:</span>
+                        <span id="selectedDelay"></span>
+                    </div>
+                    <div class="status-item">
+                        <span class="label">Plan:</span>
+                        <span id="selectedPlan"></span>
+                    </div>
+                </div>
+
+                <div class="chat-demo">
+                    <h3>Chat Translation Demo</h3>
+                    <div class="chat-container">
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="message original">
+                                <span class="username">User123:</span>
+                                <span class="text">Hello, how are you doing today?</span>
+                            </div>
+                            <div class="message translated">
+                                <span class="username">User123:</span>
+                                <span class="text">Hola, ¿cómo estás hoy?</span>
+                                <span class="translation-badge">Translated</span>
+                            </div>
+                        </div>
+                        <div class="chat-input">
+                            <input type="text" id="messageInput" placeholder="Type a message to test translation...">
+                            <button onclick="sendMessage()">Send</button>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="reset-btn" onclick="resetConfiguration()">Reset Configuration</button>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>&copy; 2024 Kick Chat Translator. Built for GitHub Pages.</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
