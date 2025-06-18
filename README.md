@@ -34,7 +34,7 @@ kick-chat-translator/
 2. Upload all files from the `kick-chat-translator` folder to your repository
 3. Go to Settings → Pages in your repository
 4. Select "Deploy from a branch" and choose "main" branch
-5. Your site will be available at `https://yourusername.github.io/repository-name`
+5. Your site will be available at `https://ramerlikh.github.io/kickchattranslator/`
 
 ### Method 2: Git Commands
 ```bash
