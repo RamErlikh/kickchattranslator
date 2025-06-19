@@ -1,0 +1,46 @@
+{
+  "name": "kick-chat-translator",
+  "version": "1.0.0",
+  "description": "A free, browser-based chatbot that automatically translates messages in Kick.com chat rooms in real-time",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server . -p 8080 -o",
+    "dev": "npx http-server . -p 8080 -o -c-1",
+    "deploy": "echo 'Deploy to GitHub Pages through repository settings'",
+    "test": "echo 'Open index.html in browser to test'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/kick-chat-translator.git"
+  },
+  "keywords": [
+    "kick",
+    "chat",
+    "translator",
+    "bot",
+    "real-time",
+    "multilingual",
+    "streaming",
+    "twitch",
+    "live-chat",
+    "translation",
+    "free"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/yourusername/kick-chat-translator/issues"
+  },
+  "homepage": "https://yourusername.github.io/kick-chat-translator",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+} 
