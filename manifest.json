@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "Kick Chat Translator",
+  "version": "1.0.0",
+  "description": "Translate chat messages in real-time on Kick.com streams",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://kick.com/*",
+    "https://libretranslate.de/*",
+    "https://api.mymemory.translated.net/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://kick.com/*"],
+      "js": ["content-script.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "index.html",
+    "default_title": "Kick Chat Translator"
+  },
+  "icons": {
+    "16": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTggMEMzLjU4IDAgMCAzLjU4IDAgOHMzLjU4IDggOCA4IDgtMy41OCA4LThTMTIuNDIgMCA4IDBabTAgMTRjLTMuMzEgMC02LTIuNjktNi02czIuNjktNiA2LTYgNiAyLjY5IDYgNi0yLjY5IDYtNiA2WiIgZmlsbD0iIzY2N2VlYSIvPgo8cGF0aCBkPSJNNS41IDZoMXYxaC0xVjZabTMgMGgxdjFoLTFWNlptLTEuNSAzYzAgMS4xLjkgMiAyIDJzMi0uOSAyLTJIOFoiIGZpbGw9IiM2NjdlZWEiLz4KPC9zdmc+",
+    "48": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTI0IDBDMTAuNzQgMCAwIDEwLjc0IDAgMjRzMTAuNzQgMjQgMjQgMjQgMjQtMTAuNzQgMjQtMjRTMzcuMjYgMCAyNCAwWm0wIDQyYy05LjkzIDAtMTgtOC4wNy0xOC0xOFMxNC4wNyA2IDI0IDZzMTggOC4wNyAxOCAxOC04LjA3IDE4LTE4IDE4WiIgZmlsbD0iIzY2N2VlYSIvPgo8cGF0aCBkPSJNMTYuNSAxOGgzdjNoLTN2LTNabTkgMGgzdjNoLTN2LTNabS00LjUgOWMwIDMuMyAyLjcgNiA2IDZzNi0yLjcgNi02SDIxWiIgZmlsbD0iIzY2N2VlYSIvPgo8L3N2Zz4K",
+    "128": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTI4IiBoZWlnaHQ9IjEyOCIgdmlld0JveD0iMCAwIDEyOCAxMjgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik02NCAwQzI4LjY2IDAgMCAyOC42NiAwIDY0czI4LjY2IDY0IDY0IDY0IDY0LTI4LjY2IDY0LTY0UzEwMy4zNCAwIDY0IDBabTAgMTEyYy0yNi41MSAwLTQ4LTIxLjQ5LTQ4LTQ4UzM3LjQ5IDE2IDY0IDE2czQ4IDIxLjQ5IDQ4IDQ4LTIxLjQ5IDQ4LTQ4IDQ4WiIgZmlsbD0iIzY2N2VlYSIvPgo8cGF0aCBkPSJNNDQgNDhoOHY4aC04di04Wm0yNCAwaDh2OGgtOHYtOFptLTEyIDI0YzAgOC44IDcuMiAxNiAxNiAxNnMxNi03LjIgMTYtMTZINTZaIiBmaWxsPSIjNjY3ZWVhIi8+Cjwvc3ZnPgo="
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["*.js", "*.css"],
+      "matches": ["https://kick.com/*"]
+    }
+  ]
+} 

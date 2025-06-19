@@ -96,24 +96,45 @@ class KickTranslatorBot {
             
             // Try to login first
             this.log('🔐 Attempting to login to Kick...');
-            const loginResult = await this.kickClient.login(this.config.username, this.config.password);
             
-            if (loginResult.requiresOTP) {
-                // Show OTP input
-                this.awaitingOTP = true;
-                this.showOTPInput();
-                this.log('📧 2FA required - Check your email for the 6-digit code');
-                this.updateStatus('connecting', 'Enter OTP Code');
-                this.elements.startBot.textContent = 'Verify OTP';
-                this.elements.startBot.disabled = false;
+            try {
+                const loginResult = await this.kickClient.login(this.config.username, this.config.password);
+                
+                if (loginResult.requiresOTP) {
+                    // Show OTP input
+                    this.awaitingOTP = true;
+                    this.showOTPInput();
+                    this.log('📧 2FA required - Check your email for the 6-digit code');
+                    this.updateStatus('connecting', 'Enter OTP Code');
+                    this.elements.startBot.textContent = 'Verify OTP';
+                    this.elements.startBot.disabled = false;
+                    return;
+                } else if (loginResult.success) {
+                    // Login successful, continue with chat connection
+                    await this.completeBotSetup(channelName);
+                    return;
+                } else {
+                    // Login failed, but not due to CORS
+                    throw new Error(loginResult.error || 'Login failed');
+                }
+            } catch (corsError) {
+                // Handle CORS/network errors specifically
+                if (corsError.message.includes('CORS') || 
+                    corsError.message.includes('fetch') || 
+                    corsError.message.includes('Network') ||
+                    corsError.name === 'TypeError') {
+                    
+                    this.log('⚠️ Browser-based login blocked by CORS policy', 'warning');
+                    this.log('🔍 Switching to READ-ONLY mode (can see messages but cannot reply)', 'warning');
+                    this.log('💡 For full bot functionality, you need to run this from a server or browser extension', 'warning');
+                } else {
+                    this.log(`❌ Login error: ${corsError.message}`, 'error');
+                }
+                
+                // Try read-only mode as fallback
+                await this.tryReadOnlyMode(channelName);
                 return;
-            } else if (!loginResult.success) {
-                // Login failed completely
-                throw new Error(loginResult.error || 'Login failed');
             }
-
-            // Login successful, continue with chat connection
-            await this.completeBotSetup(channelName);
 
         } catch (error) {
             console.error('Failed to start bot:', error);

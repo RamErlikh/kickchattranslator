@@ -43,7 +43,7 @@ class KickClient {
             // Get CSRF token first
             const csrfToken = await this.getCSRFToken();
             if (!csrfToken) {
-                throw new Error('Could not obtain CSRF token');
+                throw new Error('Could not obtain CSRF token due to browser CORS restrictions');
             }
 
             // Initial login request (this will trigger OTP email)
@@ -77,6 +77,12 @@ class KickClient {
             }
         } catch (error) {
             console.error('Login error:', error);
+            
+            // Detect CORS-related errors
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                throw new Error('CORS: Browser blocked request to Kick.com');
+            }
+            
             return { success: false, requiresOTP: false, error: error.message };
         }
     }

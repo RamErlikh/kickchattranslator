@@ -109,15 +109,30 @@ The bot supports translation between these languages:
 
 ## ⚠️ Important Notes
 
-### Browser Limitations
+### Browser Limitations & CORS
 - This is a **browser-based solution** that requires the page to stay open
+- **CORS (Cross-Origin Resource Sharing)** restrictions prevent direct login to Kick.com from GitHub Pages
+- The bot will automatically switch to **READ-ONLY MODE** when CORS blocks the login
 - Some browsers may limit background tab activity
 - For 24/7 operation, consider using a VPS with a headless browser
 
-### Authentication
-- The bot requires valid Kick account credentials
-- If login fails, it switches to "read-only mode" (can see translations but not post them)
-- Make sure your bot account has chat permissions in the target channel
+### Authentication Modes
+1. **Full Bot Mode** (can post translations to chat):
+   - Requires running from a server or browser extension
+   - Can authenticate with Kick.com and post messages
+   - Supports 2FA/OTP authentication
+
+2. **Read-Only Mode** (shows translations but can't post):
+   - Works from GitHub Pages and any browser
+   - Can see and translate messages
+   - Translations appear in the log but are not posted to chat
+   - You can manually copy-paste translations
+
+### Solutions for Full Bot Mode
+1. **Browser Extension**: Create a browser extension with host permissions
+2. **Local Server**: Run with `npm start` on your computer
+3. **VPS/Cloud Server**: Deploy to a server with proper CORS handling
+4. **Manual Copy-Paste**: Use read-only mode and copy translations manually
 
 ### Rate Limiting
 - Built-in protection against message spam
@@ -125,7 +140,7 @@ The bot supports translation between these languages:
 - Automatic duplicate message detection
 
 ### CORS and Security
-- Uses CORS proxies for some API calls
+- GitHub Pages has CORS restrictions for security
 - Translation APIs are free but may have rate limits
 - No sensitive data is stored permanently
 
