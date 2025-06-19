@@ -218,6 +218,16 @@ body {
     font-size: 14px;
 }
 
+.log-entry.log-warning {
+    border-left-color: #f39c12;
+    background: #fff8e1;
+}
+
+.log-entry.log-error {
+    border-left-color: #e74c3c;
+    background: #ffebee;
+}
+
 .log-entry .timestamp {
     color: #666;
     font-size: 12px;
