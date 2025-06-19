@@ -44,6 +44,16 @@ class KickTranslatorBot {
 
         // Load saved configuration
         this.loadConfiguration();
+        
+        // Show initial information about OTP requirement
+        this.showInitialInfo();
+    }
+
+    showInitialInfo() {
+        this.log('🤖 Kick Chat Translator initialized');
+        this.log('ℹ️  Note: Kick.com requires OTP (One-Time Password) for login');
+        this.log('📋 This bot will run in READ-ONLY mode (shows translations but cannot post)');
+        this.log('💡 Translations will be displayed here for you to copy and paste manually');
     }
 
     async startBot() {
@@ -67,26 +77,20 @@ class KickTranslatorBot {
                 throw new Error('Invalid channel URL');
             }
 
-            // Initialize and connect Kick client
-            this.kickClient = new KickClient();
+            this.log('🚀 Starting Kick Chat Translator...');
+            this.log(`🎯 Target Channel: ${channelName}`);
+            this.log(`🌍 Target Language: ${this.config.targetLanguage.toUpperCase()} (messages in this language will NOT be translated)`);
+
+            // Skip login attempt since we know OTP is required
+            this.log('⚠️  Skipping login - Kick requires OTP authentication');
+            this.log('🔍 Running in READ-ONLY mode (cannot post messages to chat)');
             
-            // Try to login first
-            this.log('🔐 Attempting to login to Kick...');
-            const loginSuccess = await this.kickClient.login(this.config.username, this.config.password);
-            
-            if (!loginSuccess) {
-                // If login fails, try simple client (read-only mode)
-                this.log('❌ Login failed - Browser-based login blocked by CORS', 'warning');
-                this.log('🔍 Switching to READ-ONLY mode (can see messages but cannot reply)', 'warning');
-                this.kickClient = new KickSimpleClient();
-                this.isReadOnlyMode = true;
-            } else {
-                this.log('✅ Login successful - Full bot mode enabled');
-                this.isReadOnlyMode = false;
-            }
+            // Use simple client directly
+            this.kickClient = new KickSimpleClient();
+            this.isReadOnlyMode = true;
 
             // Connect to chat
-            this.log(`🌐 Connecting to channel: ${channelName}`);
+            this.log(`🌐 Connecting to channel: ${channelName}...`);
             const connected = await this.kickClient.connectToChat(channelName);
             
             if (!connected) {
@@ -96,22 +100,17 @@ class KickTranslatorBot {
             // Set up message handler
             this.kickClient.onMessage((message) => this.handleMessage(message));
 
-            // Update status based on mode
+            // Update status for read-only mode
             this.isRunning = true;
             this.stats.startTime = new Date();
-            
-            if (this.isReadOnlyMode) {
-                this.updateStatus('connecting', 'Connected (Read-Only Mode)');
-                this.log('⚠️  Bot is in READ-ONLY mode - translations will be logged but NOT posted to chat');
-                this.log('📝 To enable message posting, you need to run this from a server or use a different authentication method');
-            } else {
-                this.updateStatus('connected', 'Connected & Translating');
-                this.log('🤖 Bot is fully operational - will post translations to chat');
-            }
+            this.updateStatus('connecting', 'Connected (Read-Only Mode)');
+            this.log('✅ Successfully connected to chat!');
+            this.log('👀 Now monitoring chat messages...');
+            this.log('🔤 Non-English messages will be translated and shown below');
+            this.log('📋 Copy translations from here and paste them into chat manually');
             
             this.elements.activeChannel.textContent = channelName;
             this.elements.stopBot.style.display = 'inline-flex';
-            this.log(`🚀 Bot started successfully for channel: ${channelName}`);
 
         } catch (error) {
             console.error('Failed to start bot:', error);
@@ -150,11 +149,6 @@ class KickTranslatorBot {
                 return;
             }
 
-            // Skip bot's own messages
-            if (message.username === this.config.username) {
-                return;
-            }
-
             // Mark message as processed
             this.processedMessages.add(message.id);
 
@@ -165,8 +159,8 @@ class KickTranslatorBot {
                 messagesArray.slice(-500).forEach(id => this.processedMessages.add(id));
             }
 
-            // Log received message for debugging
-            this.log(`📨 Received: ${message.username}: "${message.content}"`);
+            // Log received message
+            this.log(`💬 ${message.username}: ${message.content}`);
 
             // Check if message needs translation
             const shouldTranslate = await this.translator.shouldTranslate(
@@ -175,15 +169,13 @@ class KickTranslatorBot {
             );
 
             if (shouldTranslate) {
-                this.log(`🔍 Message needs translation from ${message.username}`);
+                this.log(`🔍 Translating message from ${message.username}...`);
                 // Apply translation delay if configured
                 if (this.config.translationDelay > 0) {
-                    setTimeout(() => this.translateAndSend(message), this.config.translationDelay);
+                    setTimeout(() => this.translateAndShow(message), this.config.translationDelay);
                 } else {
-                    await this.translateAndSend(message);
+                    await this.translateAndShow(message);
                 }
-            } else {
-                this.log(`⏭️  Skipping translation (already in target language): ${message.content}`);
             }
 
         } catch (error) {
@@ -192,15 +184,12 @@ class KickTranslatorBot {
         }
     }
 
-    async translateAndSend(message) {
+    async translateAndShow(message) {
         try {
             if (!this.isRunning) return;
 
-            this.log(`🔄 Translating message from ${message.username}...`);
-
             // Detect source language and translate
             const detectedLang = await this.translator.detectLanguage(message.content);
-            this.log(`🌍 Detected language: ${detectedLang}`);
             
             const translatedText = await this.translator.translateText(
                 message.content,
@@ -217,33 +206,32 @@ class KickTranslatorBot {
                     this.config.targetLanguage
                 );
 
-                // Add user reference
+                // Create the bot message that would be sent
                 const botMessage = `@${message.username} ${formattedTranslation}`;
 
-                // Try to send the message (if bot has send permissions)
-                if (this.isReadOnlyMode) {
-                    this.log(`📋 [READ-ONLY] Would send: "${botMessage}"`, 'warning');
-                    this.log(`🔤 Translation: "${message.content}" → "${translatedText}"`);
-                } else {
-                    try {
-                        if (this.kickClient && typeof this.kickClient.sendMessage === 'function') {
-                            await this.kickClient.sendMessage(botMessage);
-                            this.log(`✅ Sent translation to chat: @${message.username}`);
-                            this.log(`🔤 "${message.content}" → "${translatedText}"`);
-                        } else {
-                            this.log(`❌ Cannot send message - sendMessage function not available`, 'error');
-                        }
-                    } catch (sendError) {
-                        this.log(`❌ Failed to send message: ${sendError.message}`, 'error');
-                        this.log(`🔤 Translation was: "${message.content}" → "${translatedText}"`);
-                    }
-                }
+                // Show the translation prominently
+                this.log(`🌟 TRANSLATION READY:`, 'translation');
+                this.log(`📝 Copy this: ${botMessage}`, 'translation');
+                this.log(`🔤 Original: "${message.content}" → "${translatedText}"`, 'info');
+                this.log(`🌍 Language: ${this.translator.supportedLanguages[detectedLang] || detectedLang} → ${this.translator.supportedLanguages[this.config.targetLanguage] || this.config.targetLanguage}`, 'info');
+                this.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'separator');
 
                 // Update stats
                 this.stats.translatedCount++;
                 this.elements.translatedCount.textContent = this.stats.translatedCount;
+
+                // Optional: Add to clipboard if supported
+                try {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        await navigator.clipboard.writeText(botMessage);
+                        this.log('📋 Translation copied to clipboard!', 'success');
+                    }
+                } catch (clipboardError) {
+                    // Clipboard access might not be available
+                }
+
             } else {
-                this.log(`⚠️  Translation failed or returned same text`);
+                this.log(`⚠️  Translation failed or returned same text for: "${message.content}"`);
             }
 
         } catch (error) {
@@ -253,19 +241,7 @@ class KickTranslatorBot {
     }
 
     validateInputs() {
-        const username = this.elements.botUsername.value.trim();
-        const password = this.elements.botPassword.value.trim();
         const channelUrl = this.elements.channelUrl.value.trim();
-
-        if (!username) {
-            alert('Please enter bot username');
-            return false;
-        }
-
-        if (!password) {
-            alert('Please enter bot password');
-            return false;
-        }
 
         if (!channelUrl) {
             alert('Please enter channel URL');
@@ -334,6 +310,7 @@ class KickTranslatorBot {
 
     clearLog() {
         this.elements.translationLog.innerHTML = '';
+        this.showInitialInfo();
     }
 
     saveConfiguration() {
