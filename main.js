@@ -4,6 +4,7 @@ class KickTranslatorBot {
         this.translator = new Translator();
         this.isRunning = false;
         this.isReadOnlyMode = false;
+        this.awaitingOTP = false;
         this.config = {
             username: '',
             password: '',
@@ -34,30 +35,43 @@ class KickTranslatorBot {
             botPassword: document.getElementById('botPassword'),
             targetLanguage: document.getElementById('targetLanguage'),
             translationDelay: document.getElementById('translationDelay'),
-            channelUrl: document.getElementById('channelUrl')
+            channelUrl: document.getElementById('channelUrl'),
+            otpGroup: document.getElementById('otpGroup'),
+            botOtp: document.getElementById('botOtp'),
+            resendOtp: document.getElementById('resendOtp')
         };
 
         // Add event listeners
         this.elements.startBot.addEventListener('click', () => this.startBot());
         this.elements.stopBot.addEventListener('click', () => this.stopBot());
         this.elements.clearLog.addEventListener('click', () => this.clearLog());
+        
+        // OTP event listeners
+        if (this.elements.resendOtp) {
+            this.elements.resendOtp.addEventListener('click', () => this.resendOTP());
+        }
+        
+        // Auto-submit OTP when 6 digits are entered
+        if (this.elements.botOtp) {
+            this.elements.botOtp.addEventListener('input', (e) => {
+                if (e.target.value.length === 6 && /^\d{6}$/.test(e.target.value)) {
+                    this.submitOTP();
+                }
+            });
+        }
 
         // Load saved configuration
         this.loadConfiguration();
-        
-        // Show initial information about OTP requirement
-        this.showInitialInfo();
-    }
-
-    showInitialInfo() {
-        this.log('🤖 Kick Chat Translator initialized');
-        this.log('ℹ️  Note: Kick.com requires OTP (One-Time Password) for login');
-        this.log('📋 This bot will run in READ-ONLY mode (shows translations but cannot post)');
-        this.log('💡 Translations will be displayed here for you to copy and paste manually');
     }
 
     async startBot() {
         try {
+            // If awaiting OTP, submit it
+            if (this.awaitingOTP) {
+                await this.submitOTP();
+                return;
+            }
+
             // Validate inputs
             if (!this.validateInputs()) {
                 return;
@@ -77,20 +91,96 @@ class KickTranslatorBot {
                 throw new Error('Invalid channel URL');
             }
 
-            this.log('🚀 Starting Kick Chat Translator...');
-            this.log(`🎯 Target Channel: ${channelName}`);
-            this.log(`🌍 Target Language: ${this.config.targetLanguage.toUpperCase()} (messages in this language will NOT be translated)`);
-
-            // Skip login attempt since we know OTP is required
-            this.log('⚠️  Skipping login - Kick requires OTP authentication');
-            this.log('🔍 Running in READ-ONLY mode (cannot post messages to chat)');
+            // Initialize Kick client
+            this.kickClient = new KickClient();
             
-            // Use simple client directly
-            this.kickClient = new KickSimpleClient();
-            this.isReadOnlyMode = true;
+            // Try to login first
+            this.log('🔐 Attempting to login to Kick...');
+            const loginResult = await this.kickClient.login(this.config.username, this.config.password);
+            
+            if (loginResult.requiresOTP) {
+                // Show OTP input
+                this.awaitingOTP = true;
+                this.showOTPInput();
+                this.log('📧 2FA required - Check your email for the 6-digit code');
+                this.updateStatus('connecting', 'Enter OTP Code');
+                this.elements.startBot.textContent = 'Verify OTP';
+                this.elements.startBot.disabled = false;
+                return;
+            } else if (!loginResult.success) {
+                // Login failed completely
+                throw new Error(loginResult.error || 'Login failed');
+            }
+
+            // Login successful, continue with chat connection
+            await this.completeBotSetup(channelName);
+
+        } catch (error) {
+            console.error('Failed to start bot:', error);
+            this.log(`❌ Error: ${error.message}`, 'error');
+            this.updateStatus('disconnected', 'Connection Failed');
+            this.resetUI();
+        }
+    }
+
+    async submitOTP() {
+        try {
+            const otpCode = this.elements.botOtp.value.trim();
+            if (!otpCode || otpCode.length !== 6) {
+                alert('Please enter a valid 6-digit OTP code');
+                return;
+            }
+
+            this.log('🔢 Verifying OTP code...');
+            this.elements.startBot.disabled = true;
+
+            const otpResult = await this.kickClient.loginWithOTP(
+                this.config.username, 
+                this.config.password, 
+                otpCode
+            );
+
+            if (!otpResult.success) {
+                throw new Error(otpResult.error || 'OTP verification failed');
+            }
+
+            this.log('✅ OTP verified successfully');
+            this.awaitingOTP = false;
+            this.hideOTPInput();
+
+            // Continue with chat connection
+            const channelName = this.extractChannelName(this.config.channelUrl);
+            await this.completeBotSetup(channelName);
+
+        } catch (error) {
+            console.error('OTP verification failed:', error);
+            this.log(`❌ OTP Error: ${error.message}`, 'error');
+            this.elements.startBot.disabled = false;
+        }
+    }
+
+    async resendOTP() {
+        try {
+            this.log('📧 Resending OTP code...');
+            const success = await this.kickClient.resendOTP(this.config.username);
+            if (success) {
+                this.log('✅ New OTP code sent to your email');
+            } else {
+                this.log('❌ Failed to resend OTP code', 'error');
+            }
+        } catch (error) {
+            console.error('Resend OTP error:', error);
+            this.log(`❌ Error resending OTP: ${error.message}`, 'error');
+        }
+    }
+
+    async completeBotSetup(channelName) {
+        try {
+            this.log('✅ Login successful - Full bot mode enabled');
+            this.isReadOnlyMode = false;
 
             // Connect to chat
-            this.log(`🌐 Connecting to channel: ${channelName}...`);
+            this.log(`🌐 Connecting to channel: ${channelName}`);
             const connected = await this.kickClient.connectToChat(channelName);
             
             if (!connected) {
@@ -100,30 +190,69 @@ class KickTranslatorBot {
             // Set up message handler
             this.kickClient.onMessage((message) => this.handleMessage(message));
 
-            // Update status for read-only mode
+            // Update status
             this.isRunning = true;
             this.stats.startTime = new Date();
-            this.updateStatus('connecting', 'Connected (Read-Only Mode)');
-            this.log('✅ Successfully connected to chat!');
-            this.log('👀 Now monitoring chat messages...');
-            this.log('🔤 Non-English messages will be translated and shown below');
-            this.log('📋 Copy translations from here and paste them into chat manually');
+            this.updateStatus('connected', 'Connected & Translating');
+            this.log('🤖 Bot is fully operational - will post translations to chat');
             
             this.elements.activeChannel.textContent = channelName;
             this.elements.stopBot.style.display = 'inline-flex';
+            this.log(`🚀 Bot started successfully for channel: ${channelName}`);
 
         } catch (error) {
-            console.error('Failed to start bot:', error);
-            this.log(`❌ Error: ${error.message}`, 'error');
-            this.updateStatus('disconnected', 'Connection Failed');
-            this.elements.startBot.disabled = false;
+            // If full login fails, try read-only mode
+            this.log('❌ Full bot mode failed, switching to read-only mode...', 'warning');
+            await this.tryReadOnlyMode(channelName);
         }
+    }
+
+    async tryReadOnlyMode(channelName) {
+        try {
+            this.kickClient = new KickSimpleClient();
+            this.isReadOnlyMode = true;
+
+            const connected = await this.kickClient.connectToChat(channelName);
+            if (!connected) {
+                throw new Error('Failed to connect to chat in read-only mode');
+            }
+
+            this.kickClient.onMessage((message) => this.handleMessage(message));
+
+            this.isRunning = true;
+            this.stats.startTime = new Date();
+            this.updateStatus('connecting', 'Connected (Read-Only Mode)');
+            this.log('⚠️  Bot is in READ-ONLY mode - translations will be logged but NOT posted to chat');
+            
+            this.elements.activeChannel.textContent = channelName;
+            this.elements.stopBot.style.display = 'inline-flex';
+        } catch (error) {
+            throw new Error('Both full and read-only modes failed: ' + error.message);
+        }
+    }
+
+    showOTPInput() {
+        this.elements.otpGroup.style.display = 'block';
+        this.elements.botOtp.focus();
+    }
+
+    hideOTPInput() {
+        this.elements.otpGroup.style.display = 'none';
+        this.elements.botOtp.value = '';
+    }
+
+    resetUI() {
+        this.elements.startBot.disabled = false;
+        this.elements.startBot.innerHTML = '<i class="fas fa-play"></i> Start Translation Bot';
+        this.awaitingOTP = false;
+        this.hideOTPInput();
     }
 
     async stopBot() {
         try {
             this.isRunning = false;
             this.isReadOnlyMode = false;
+            this.awaitingOTP = false;
             
             if (this.kickClient) {
                 this.kickClient.disconnect();
@@ -132,7 +261,7 @@ class KickTranslatorBot {
 
             this.updateStatus('disconnected', 'Disconnected');
             this.elements.activeChannel.textContent = 'None';
-            this.elements.startBot.disabled = false;
+            this.resetUI();
             this.elements.stopBot.style.display = 'none';
             this.log('🛑 Bot stopped');
 
@@ -149,6 +278,11 @@ class KickTranslatorBot {
                 return;
             }
 
+            // Skip bot's own messages
+            if (message.username === this.config.username) {
+                return;
+            }
+
             // Mark message as processed
             this.processedMessages.add(message.id);
 
@@ -159,8 +293,8 @@ class KickTranslatorBot {
                 messagesArray.slice(-500).forEach(id => this.processedMessages.add(id));
             }
 
-            // Log received message
-            this.log(`💬 ${message.username}: ${message.content}`);
+            // Log received message for debugging
+            this.log(`📨 Received: ${message.username}: "${message.content}"`);
 
             // Check if message needs translation
             const shouldTranslate = await this.translator.shouldTranslate(
@@ -169,13 +303,15 @@ class KickTranslatorBot {
             );
 
             if (shouldTranslate) {
-                this.log(`🔍 Translating message from ${message.username}...`);
+                this.log(`🔍 Message needs translation from ${message.username}`);
                 // Apply translation delay if configured
                 if (this.config.translationDelay > 0) {
-                    setTimeout(() => this.translateAndShow(message), this.config.translationDelay);
+                    setTimeout(() => this.translateAndSend(message), this.config.translationDelay);
                 } else {
-                    await this.translateAndShow(message);
+                    await this.translateAndSend(message);
                 }
+            } else {
+                this.log(`⏭️  Skipping translation (already in target language): ${message.content}`);
             }
 
         } catch (error) {
@@ -184,12 +320,15 @@ class KickTranslatorBot {
         }
     }
 
-    async translateAndShow(message) {
+    async translateAndSend(message) {
         try {
             if (!this.isRunning) return;
 
+            this.log(`🔄 Translating message from ${message.username}...`);
+
             // Detect source language and translate
             const detectedLang = await this.translator.detectLanguage(message.content);
+            this.log(`🌍 Detected language: ${detectedLang}`);
             
             const translatedText = await this.translator.translateText(
                 message.content,
@@ -206,32 +345,33 @@ class KickTranslatorBot {
                     this.config.targetLanguage
                 );
 
-                // Create the bot message that would be sent
+                // Add user reference
                 const botMessage = `@${message.username} ${formattedTranslation}`;
 
-                // Show the translation prominently
-                this.log(`🌟 TRANSLATION READY:`, 'translation');
-                this.log(`📝 Copy this: ${botMessage}`, 'translation');
-                this.log(`🔤 Original: "${message.content}" → "${translatedText}"`, 'info');
-                this.log(`🌍 Language: ${this.translator.supportedLanguages[detectedLang] || detectedLang} → ${this.translator.supportedLanguages[this.config.targetLanguage] || this.config.targetLanguage}`, 'info');
-                this.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'separator');
+                // Try to send the message (if bot has send permissions)
+                if (this.isReadOnlyMode) {
+                    this.log(`📋 [READ-ONLY] Would send: "${botMessage}"`, 'warning');
+                    this.log(`🔤 Translation: "${message.content}" → "${translatedText}"`);
+                } else {
+                    try {
+                        if (this.kickClient && typeof this.kickClient.sendMessage === 'function') {
+                            await this.kickClient.sendMessage(botMessage);
+                            this.log(`✅ Sent translation to chat: @${message.username}`);
+                            this.log(`🔤 "${message.content}" → "${translatedText}"`);
+                        } else {
+                            this.log(`❌ Cannot send message - sendMessage function not available`, 'error');
+                        }
+                    } catch (sendError) {
+                        this.log(`❌ Failed to send message: ${sendError.message}`, 'error');
+                        this.log(`🔤 Translation was: "${message.content}" → "${translatedText}"`);
+                    }
+                }
 
                 // Update stats
                 this.stats.translatedCount++;
                 this.elements.translatedCount.textContent = this.stats.translatedCount;
-
-                // Optional: Add to clipboard if supported
-                try {
-                    if (navigator.clipboard && navigator.clipboard.writeText) {
-                        await navigator.clipboard.writeText(botMessage);
-                        this.log('📋 Translation copied to clipboard!', 'success');
-                    }
-                } catch (clipboardError) {
-                    // Clipboard access might not be available
-                }
-
             } else {
-                this.log(`⚠️  Translation failed or returned same text for: "${message.content}"`);
+                this.log(`⚠️  Translation failed or returned same text`);
             }
 
         } catch (error) {
@@ -241,7 +381,19 @@ class KickTranslatorBot {
     }
 
     validateInputs() {
+        const username = this.elements.botUsername.value.trim();
+        const password = this.elements.botPassword.value.trim();
         const channelUrl = this.elements.channelUrl.value.trim();
+
+        if (!username) {
+            alert('Please enter bot username');
+            return false;
+        }
+
+        if (!password) {
+            alert('Please enter bot password');
+            return false;
+        }
 
         if (!channelUrl) {
             alert('Please enter channel URL');
@@ -310,7 +462,6 @@ class KickTranslatorBot {
 
     clearLog() {
         this.elements.translationLog.innerHTML = '';
-        this.showInitialInfo();
     }
 
     saveConfiguration() {
